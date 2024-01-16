@@ -1,217 +1,149 @@
-// Screens/Login.js
 import React, { useState } from 'react';
-import {
-  StyledContainer,
-  InnerContainer,
-  PageLogo,
-  PageTitle,
-  SubTitle,
-  StyledFormArea,
-  LeftIcon,
-  StyledInputLabel,
-  StyledTextInput,
-  RightIcon,
-  StyledButton,
-  ButtonText,
-  Colors,
-  MsgBox,
-  ExtraText,
-  ExtraView,
-  TextLink,
-  TextLinkContent,
-  Line,
-} from './../Components/styles';
-import { StatusBar } from 'expo-status-bar';
-import { Formik } from 'formik';
-import { View, TouchableOpacity } from 'react-native';
-import { Octicons, Ionicons, Fontisto } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import KeyboadAvoider from '../Components/keyboadAvoider';
-import { Text, StyleSheet } from 'react-native';
+import { View, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 
-const { brand, darkLight, primary } = Colors;
+const SignUp = ({ navigation }) => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmpassword, setConfirmpassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
-const Signup = ({ navigation }) => {
-  const [hidePassword, setHidePassword] = useState(true);
-  const [show, setShow] = useState(false);
-  const [date, setData] = useState(new Date(2000, 0, 1));
-  const [dob, setDob] = useState();
-  const onChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShow(false);
-    setData(currentDate);
-    setDob(currentDate);
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
   };
 
-  const showDatePicker = () => {
-    setShow(true);
+  const toggleConfirmPasswordVisibility = () => {
+    setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
   };
+
+  const handleSignUp = async () => {
+    // Simple validation
+    if (!username.trim()) {
+      Alert.alert('Validation Error', 'Please enter a username.');
+      return;
+    }
+
+    if (!email.trim()) {
+      Alert.alert('Validation Error', 'Please enter an email address.');
+      return;
+    }
+
+    // You can add more advanced email validation if needed
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Validation Error', 'Please enter a valid email address.');
+      return;
+    }
+
+    if (!password.trim()) {
+      Alert.alert('Validation Error', 'Please enter a password.');
+      return;
+    }
+
+    if (password !== confirmpassword) {
+      Alert.alert('Validation Error', 'Passwords do not match.');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://192.168.57.10:3000/signup', {
+        username,
+        email,
+        password,
+        confirmpassword,
+      });
+
+      // Handle the response, e.g., show a success message
+      console.log(response.data);
+
+      // After successful signup, navigate to the login page
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Signup error: ' + error.message);
+      // Handle signup error, e.g., show an error message to the user
+    }
+  };
+
   return (
-    <KeyboadAvoider>
-      <StyledContainer>
-        <StatusBar style="dark" />
-        <InnerContainer>
-          <SubTitle>Account SignUp</SubTitle>
-          {show && (
-            <DateTimePicker testID="dateTimePicker" value={date} mode="date" is24Hour={true} onChange={onChange} />
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Username"
+        onChangeText={(text) => setUsername(text)}
+        value={username}
+      />
+      <TextInput style={styles.input} placeholder="Email" onChangeText={(text) => setEmail(text)} value={email} />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Password"
+          secureTextEntry={!isPasswordVisible}
+          onChangeText={(text) => setPassword(text)}
+          value={password}
+        />
+        <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
+          {isPasswordVisible ? (
+            <Ionicons name="eye-off" size={24} color="black" />
+          ) : (
+            <Ionicons name="eye" size={24} color="black" />
           )}
-          <Formik
-            initialValues={{ firstName: '', email: '', dateOfBirth: '', password: '', confirmPassword: '' }}
-            onSubmit={(values) => {
-              console.log(values);
-              navigation.navigate('WelcomePage');
-            }}
-          >
-            {({ handleChange, handleBlur, handleSubmit, values }) => (
-              <StyledFormArea>
-                <MyTextInputs
-                  label="First Name"
-                  icon="person"
-                  placeholder="user@gmail.com"
-                  placeholderTextColor={darkLight}
-                  onChangeText={handleChange('firstName')}
-                  onBlur={handleBlur('firstName')}
-                  value={values.firstName}
-                />
-                <MyTextInputs
-                  label="Email Address :"
-                  icon="mail"
-                  placeholder="user@gmail.com"
-                  placeholderTextColor={darkLight}
-                  onChangeText={handleChange('email')}
-                  onBlur={handleBlur('email')}
-                  value={values.email}
-                  keyboardType="email-address"
-                />
-                <MyTextInputs
-                  label="Date of Birth"
-                  icon="calendar"
-                  placeholder="YYYY/MM/DD"
-                  placeholderTextColor={darkLight}
-                  onChangeText={handleChange('dateOfBirth')}
-                  onBlur={handleBlur('DateOfBirth')}
-                  value={dob ? dob.toDateString() : ''}
-                  isDate={true}
-                  editable={false}
-                  showDatePicker={showDatePicker}
-                />
-                <MyTextInputs
-                  label="Password :"
-                  icon="lock"
-                  placeholder="* * * * * * * *"
-                  placeholderTextColor={darkLight}
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  value={values.password}
-                  secureTextEntry={hidePassword}
-                  keyboardType="default"
-                  isPassword={true}
-                  hidePassword={hidePassword}
-                  setHidePassword={setHidePassword}
-                />
-                <MyTextInputs
-                  label="Confirm Password :"
-                  icon="lock"
-                  placeholder="* * * * * * * *"
-                  placeholderTextColor={darkLight}
-                  onChangeText={handleChange('confirmPassword')}
-                  onBlur={handleBlur('confirmPassword')}
-                  value={values.confirmPassword}
-                  secureTextEntry={hidePassword}
-                  keyboardType="default"
-                  isPassword={true}
-                  hidePassword={hidePassword}
-                  setHidePassword={setHidePassword}
-                />
-                <MsgBox>...</MsgBox>
-                <TouchableOpacity style={styles.startButton} onPress={() => navigation.navigate('WelcomePage')}>
-                  <Text style={styles.buttonText}>SignUp</Text>
-                </TouchableOpacity>
-                <Line />
-
-                <ExtraView>
-                  <ExtraText>Already have an account? </ExtraText>
-                  <TextLink onPress={() => navigation.navigate('Login')}>
-                    <TextLinkContent>Log In</TextLinkContent>
-                  </TextLink>
-                </ExtraView>
-              </StyledFormArea>
-            )}
-          </Formik>
-        </InnerContainer>
-        <StatusBar style="auto" />
-      </StyledContainer>
-    </KeyboadAvoider>
-  );
-};
-
-const MyTextInputs = ({ label, icon, isPassword, hidePassword, setHidePassword, isDate, showDatePicker, ...props }) => {
-  return (
-    <View>
-      <LeftIcon>
-        <Octicons name={icon} size={30} color={brand} />
-      </LeftIcon>
-      <StyledInputLabel>{label}</StyledInputLabel>
-      {!isDate && <StyledTextInput {...props} />}
-      {isDate && (
-        <TouchableOpacity onPress={showDatePicker}>
-          <StyledTextInput {...props} />
         </TouchableOpacity>
-      )}
-      {isPassword && (
-        <RightIcon onPress={() => setHidePassword(!hidePassword)}>
-          <Ionicons name={hidePassword ? 'md-eye-off' : 'md-eye'} size={30} color={darkLight} />
-        </RightIcon>
-      )}
+      </View>
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Confirm Password"
+          secureTextEntry={!isConfirmPasswordVisible}
+          onChangeText={(text) => setConfirmpassword(text)}
+          value={confirmpassword}
+        />
+        <TouchableOpacity onPress={toggleConfirmPasswordVisibility} style={styles.eyeIcon}>
+          {isConfirmPasswordVisible ? (
+            <Ionicons name="eye-off" size={24} color="black" />
+          ) : (
+            <Ionicons name="eye" size={24} color="black" />
+          )}
+        </TouchableOpacity>
+      </View>
+      <Button title="Sign Up" onPress={handleSignUp} />
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff', // Purple theme color
-    padding: 20,
-    justifyContent: 'space-between',
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: 50,
-  },
-  logo: {
-    width: 250,
-    height: 150,
-    resizeMode: 'contain',
-  },
-  companyName: {
-    color: '#6d28d9',
-    fontSize: 18,
-    marginTop: 10,
-  },
-  content: {
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  welcomeText: {
-    color: '#6d28d9',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
+  input: {
+    height: 40,
+    width: '80%',
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 10,
   },
-  description: {
-    color: '#6d28d9',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  startButton: {
-    backgroundColor: '#6d28d9',
-    padding: 15,
-    borderRadius: 8,
+  passwordContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 50,
+    width: '80%',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 5,
   },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  passwordInput: {
+    flex: 1,
+    height: 40,
+    padding: 10,
+  },
+  eyeIcon: {
+    padding: 10,
   },
 });
-export default Signup;
+
+export default SignUp;
